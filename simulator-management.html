@@ -1,0 +1,758 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CareerLab · Simulateur Management</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700&family=Inter:wght@300;400;500&display=swap');
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#0b0c0f;--surface:#13151a;--surface2:#1a1d24;--surface3:#20242d;
+  --border:#2a2d36;--border2:#343840;--text:#f0ede8;--text2:#a8a5a0;--text3:#6b6860;
+  --accent:#e8b86d;--green:#4caf7d;--red:#e05555;
+}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:"Inter",sans-serif;}
+.screen{display:none;min-height:100vh;}
+.screen.active{display:flex;flex-direction:column;}
+#lobby{padding:28px 20px 48px;max-width:900px;margin:0 auto;width:100%;}
+.toprow{display:flex;align-items:center;justify-content:space-between;margin-bottom:28px;}
+.logowrap{display:flex;align-items:center;gap:10px;}
+.logobadge{background:var(--accent);color:#1a1000;font-family:"Syne",sans-serif;font-size:11px;font-weight:700;padding:4px 10px;border-radius:4px;letter-spacing:.1em;}
+.logotxt{font-family:"Syne",sans-serif;font-size:16px;font-weight:600;color:var(--text2);}
+.themepill{background:var(--surface2);border:1px solid var(--border);border-radius:20px;padding:5px 14px;font-size:12px;color:var(--accent);font-weight:500;}
+.herosec{margin-bottom:28px;}
+.herosec h1{font-family:"Syne",sans-serif;font-size:28px;font-weight:700;line-height:1.25;margin-bottom:8px;}
+.herosec h1 em{color:var(--accent);font-style:normal;}
+.herosec p{font-size:14px;color:var(--text2);line-height:1.7;max-width:580px;}
+.herostat{display:flex;gap:20px;margin-top:14px;}
+.hstat{font-size:13px;color:var(--text3);}
+.hstat b{color:var(--text2);font-weight:500;}
+.seclbl{font-size:11px;font-weight:500;letter-spacing:.12em;color:var(--text3);margin-bottom:14px;}
+#scgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(255px,1fr));gap:12px;margin-bottom:24px;}
+.scard{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px 20px;cursor:pointer;transition:all .2s;}
+.scard:hover{border-color:var(--border2);background:var(--surface2);}
+.scard.sel{border-color:var(--accent);background:var(--surface2);}
+.scnum{font-size:11px;font-weight:700;color:var(--text3);letter-spacing:.1em;margin-bottom:8px;font-family:"Syne",sans-serif;}
+.sctitle{font-family:"Syne",sans-serif;font-size:15px;font-weight:600;color:var(--text);line-height:1.3;margin-bottom:6px;}
+.scdesc{font-size:12px;color:var(--text2);line-height:1.5;margin-bottom:10px;}
+.scskills{display:flex;gap:5px;flex-wrap:wrap;}
+.scsk{font-size:10px;padding:2px 7px;border-radius:8px;background:var(--surface3);border:1px solid var(--border2);color:var(--text3);}
+.preview{background:var(--surface);border:1px solid var(--accent);border-radius:12px;padding:20px;margin-bottom:20px;display:none;}
+.preview.vis{display:block;}
+.pvlbl{font-size:11px;letter-spacing:.1em;color:var(--accent);margin-bottom:10px;}
+.pvtitle{font-family:"Syne",sans-serif;font-size:17px;font-weight:600;margin-bottom:6px;}
+.pvctx{font-size:13px;color:var(--text2);line-height:1.65;}
+.pvrow{display:flex;align-items:center;gap:12px;margin-top:14px;padding-top:14px;border-top:1px solid var(--border);}
+.pvav{width:38px;height:38px;border-radius:9px;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:18px;}
+.pvname{font-size:14px;font-weight:500;}
+.pvrole{font-size:12px;color:var(--text2);}
+.startbtn{width:100%;padding:15px;background:var(--accent);color:#1a1000;border:none;border-radius:10px;font-family:"Syne",sans-serif;font-size:15px;font-weight:700;cursor:pointer;transition:opacity .2s;}
+.startbtn:hover{opacity:.88;}
+.startbtn:disabled{opacity:.3;cursor:default;}
+#sim{flex-direction:row;height:100vh;overflow:hidden;}
+.lp{width:268px;flex-shrink:0;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;padding:16px;}
+.simlbl{font-size:10px;letter-spacing:.08em;color:var(--text3);margin-bottom:16px;font-weight:500;}
+.avblk{display:flex;flex-direction:column;align-items:center;flex:1;justify-content:center;}
+.avwrap{position:relative;width:108px;height:108px;margin-bottom:12px;}
+.avc{width:108px;height:108px;border-radius:50%;background:var(--surface2);border:2.5px solid var(--border2);display:flex;align-items:center;justify-content:center;font-size:44px;transition:all .4s;}
+.avring{position:absolute;inset:-5px;border-radius:50%;border:2px solid transparent;transition:all .4s;}
+.avc.sn{border-color:var(--border2);}
+.avc.sp{border-color:#4caf7d;box-shadow:0 0 16px rgba(76,175,125,.2);}
+.avc.st{border-color:#e05555;box-shadow:0 0 16px rgba(224,85,85,.2);}
+.avc.sc{border-color:#9b7fd4;}
+.avring.sp{border-color:#4caf7d;animation:rp 2s infinite;}
+.avring.st{border-color:#e05555;animation:rp 1.5s infinite;}
+@keyframes rp{0%{opacity:.7;transform:scale(.96);}100%{opacity:0;transform:scale(1.07);}}
+.avname{font-family:"Syne",sans-serif;font-size:14px;font-weight:600;text-align:center;margin-bottom:2px;}
+.avrole{font-size:11px;color:var(--text2);text-align:center;margin-bottom:10px;}
+.moodbadge{display:flex;align-items:center;gap:5px;background:var(--surface2);border:1px solid var(--border);border-radius:7px;padding:6px 10px;}
+.mooddot{width:6px;height:6px;border-radius:50%;transition:background .4s;}
+.moodlbl{font-size:11px;color:var(--text2);}
+.ctxcard{background:var(--surface2);border:1px solid var(--border);border-left:3px solid var(--accent);border-radius:0 7px 7px 0;padding:10px 12px;margin-top:12px;font-size:11px;color:var(--text2);line-height:1.6;}
+.rp{flex:1;display:flex;flex-direction:column;min-width:0;overflow:hidden;}
+.simtop{padding:12px 16px;border-bottom:1px solid var(--border);background:var(--surface);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.tbname{font-family:"Syne",sans-serif;font-size:13px;font-weight:600;}
+.tbtheme{font-size:11px;color:var(--accent);}
+.timerwrap{display:flex;align-items:center;gap:8px;}
+.timerval{font-family:"Syne",sans-serif;font-size:20px;font-weight:700;min-width:48px;text-align:center;transition:color .3s;}
+.timerval.warn{color:var(--accent);}
+.timerval.danger{color:var(--red);animation:bl .5s infinite;}
+@keyframes bl{0%,100%{opacity:1;}50%{opacity:.4;}}
+.timerbw{width:70px;height:4px;background:var(--border);border-radius:2px;overflow:hidden;}
+.timerbar{height:100%;background:var(--green);border-radius:2px;transition:width 1s linear,background .3s;}
+.msgs{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:11px;}
+.msg{display:flex;flex-direction:column;max-width:80%;}
+.msg.ai{align-self:flex-start;}
+.msg.user{align-self:flex-end;}
+.msglbl{font-size:10px;font-weight:500;letter-spacing:.07em;color:var(--text3);margin-bottom:3px;}
+.msg.user .msglbl{text-align:right;}
+.bubble{padding:10px 14px;font-size:14px;line-height:1.65;border-radius:10px;}
+.msg.ai .bubble{background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:4px 10px 10px 10px;}
+.msg.user .bubble{background:#1e2a1e;border:1px solid #2d3d2d;color:#c8e6c9;border-radius:10px 4px 10px 10px;}
+.bubble.sys{background:var(--surface3);border:1px solid var(--border2);color:var(--text2);font-style:italic;border-radius:8px;font-size:12px;}
+.typing{display:flex;gap:4px;padding:10px 14px;}
+.tdot{width:6px;height:6px;border-radius:50%;background:var(--text3);animation:dt 1.2s infinite;}
+.tdot:nth-child(2){animation-delay:.2s;}
+.tdot:nth-child(3){animation-delay:.4s;}
+@keyframes dt{0%,60%,100%{transform:translateY(0);}30%{transform:translateY(-5px);}}
+.statbar{padding:6px 16px;border-top:1px solid var(--border);background:var(--surface);font-size:11px;color:var(--text3);display:flex;align-items:center;gap:5px;flex-shrink:0;}
+.statpulse{width:5px;height:5px;border-radius:50%;background:var(--green);animation:spp 2s infinite;}
+@keyframes spp{0%,100%{opacity:1;}50%{opacity:.3;}}
+.inpzone{padding:11px 16px;border-top:1px solid var(--border);background:var(--surface);flex-shrink:0;}
+.inprow{display:flex;gap:7px;align-items:flex-end;}
+.siminp{flex:1;background:var(--bg);border:1.5px solid var(--border);border-radius:8px;padding:9px 12px;font-family:"Inter",sans-serif;font-size:14px;color:var(--text);resize:none;min-height:40px;max-height:100px;outline:none;line-height:1.5;transition:border-color .2s;}
+.siminp:focus{border-color:var(--border2);}
+.siminp::placeholder{color:var(--text3);}
+.siminp:disabled{opacity:.35;}
+.sendbtn{background:var(--accent);color:#1a1000;border:none;border-radius:8px;padding:9px 16px;font-family:"Syne",sans-serif;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0;transition:opacity .2s;}
+.sendbtn:hover{opacity:.85;}
+.sendbtn:disabled{opacity:.3;cursor:default;}
+.endbtn{background:transparent;border:1px solid var(--border2);color:var(--text3);border-radius:8px;padding:9px 12px;font-family:"Syne",sans-serif;font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap;flex-shrink:0;}
+.endbtn:hover{border-color:var(--red);color:var(--red);}
+#fb{padding:28px 20px 48px;max-width:780px;margin:0 auto;width:100%;}
+.fbh h1{font-family:"Syne",sans-serif;font-size:24px;font-weight:700;margin-bottom:4px;}
+.fbh p{font-size:13px;color:var(--text2);margin-bottom:20px;}
+.gcard{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:22px;margin-bottom:18px;text-align:center;}
+.gscore{font-family:"Syne",sans-serif;font-size:60px;font-weight:700;line-height:1;}
+.glbl{font-size:14px;color:var(--text2);margin-top:5px;}
+.gbw{width:100%;height:7px;background:var(--border);border-radius:4px;margin-top:14px;overflow:hidden;}
+.gbar2{height:100%;border-radius:4px;}
+.gphrase{font-size:13px;color:var(--text2);margin-top:12px;line-height:1.6;font-style:italic;}
+.metrow{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px;}
+.metcard{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px;}
+.metlbl{font-size:10px;letter-spacing:.1em;color:var(--text3);margin-bottom:5px;}
+.metval{font-family:"Syne",sans-serif;font-size:24px;font-weight:700;}
+.metsub{font-size:11px;color:var(--text2);margin-top:3px;}
+.skgrid2{display:grid;grid-template-columns:repeat(auto-fill,minmax(168px,1fr));gap:9px;margin-bottom:18px;}
+.skcard{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px;}
+.skname{font-size:11px;color:var(--text2);margin-bottom:6px;}
+.skval2{font-family:"Syne",sans-serif;font-size:22px;font-weight:700;margin-bottom:4px;}
+.skbw{width:100%;height:3px;background:var(--border);border-radius:2px;overflow:hidden;margin-bottom:5px;}
+.skbar{height:100%;border-radius:2px;}
+.skcmt{font-size:11px;color:var(--text3);line-height:1.45;}
+.fbloc{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:10px;}
+.fbloct{font-size:10px;font-weight:500;letter-spacing:.1em;color:var(--text3);margin-bottom:11px;}
+.fbitems{display:flex;flex-direction:column;gap:6px;}
+.fbitem{display:flex;gap:8px;font-size:13px;color:var(--text);line-height:1.6;padding:8px 11px;background:var(--surface2);border-radius:7px;border:1px solid var(--border);}
+.trloc{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:18px;}
+.trloct{font-size:10px;letter-spacing:.1em;color:var(--text3);margin-bottom:11px;}
+.trline{font-size:12px;color:var(--text2);line-height:1.6;margin-bottom:6px;padding-bottom:6px;border-bottom:1px solid var(--border);}
+.trline:last-child{border:none;margin:0;padding:0;}
+.trline b{color:var(--text);font-weight:500;}
+.actrow{display:flex;gap:10px;}
+.btnr{flex:1;padding:13px;background:var(--accent);color:#1a1000;border:none;border-radius:10px;font-family:"Syne",sans-serif;font-size:14px;font-weight:700;cursor:pointer;}
+.btnb{flex:1;padding:13px;background:transparent;border:1px solid var(--border2);color:var(--text2);border-radius:10px;font-family:"Syne",sans-serif;font-size:14px;font-weight:600;cursor:pointer;}
+@media(max-width:660px){
+  #sim{flex-direction:column;}
+  .lp{width:100%;height:auto;flex-direction:row;padding:10px 12px;border-right:none;border-bottom:1px solid var(--border);}
+  .avblk{flex-direction:row;gap:10px;flex:1;}
+  .avwrap{width:44px;height:44px;}
+  .avc{width:44px;height:44px;font-size:18px;}
+  .avring,.ctxcard,.simlbl{display:none;}
+  .metrow,.skgrid2{grid-template-columns:1fr 1fr;}
+  .actrow{flex-direction:column;}
+}
+
+.guide-card{background:var(--surface2);border:1px solid var(--border);border-radius:9px;padding:12px 14px;margin-top:12px;}
+.guide-method{font-size:10px;font-weight:700;letter-spacing:.12em;color:var(--accent);margin-bottom:10px;font-family:"Syne",sans-serif;}
+.guide-row{display:flex;align-items:flex-start;gap:8px;margin-bottom:8px;}
+.guide-row:last-child{margin-bottom:0;}
+.guide-letter{width:22px;height:22px;border-radius:5px;background:var(--accent);color:#1a1000;font-family:"Syne",sans-serif;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;}
+.guide-content{}
+.guide-word{font-size:11px;font-weight:600;color:var(--text);margin-bottom:2px;}
+.guide-tip{font-size:10px;color:var(--text3);line-height:1.5;}
+.guide-reminder{font-size:11px;color:var(--text2);font-style:italic;margin-top:10px;padding-top:10px;border-top:1px solid var(--border);line-height:1.5;}
+.fb-guide-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px;margin-bottom:10px;}
+.fb-guide-title{font-size:10px;font-weight:500;letter-spacing:.1em;color:var(--text3);margin-bottom:14px;}
+.fb-guide-method{display:inline-block;background:var(--surface2);border:1px solid var(--accent);border-radius:6px;padding:3px 10px;font-size:12px;font-weight:700;color:var(--accent);font-family:"Syne",sans-serif;margin-bottom:12px;}
+.fb-guide-rows{display:flex;flex-direction:column;gap:8px;}
+.fb-guide-row{display:flex;align-items:flex-start;gap:10px;padding:8px 10px;background:var(--surface2);border-radius:7px;border:1px solid var(--border);}
+.fb-guide-l{width:24px;height:24px;border-radius:5px;background:var(--accent);color:#1a1000;font-family:"Syne",sans-serif;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.fb-guide-text{}
+.fb-guide-word{font-size:12px;font-weight:600;color:var(--text);margin-bottom:2px;}
+.fb-guide-tip{font-size:12px;color:var(--text2);line-height:1.5;}
+.fb-guide-reminder{font-size:12px;color:var(--accent);font-style:italic;margin-top:12px;padding:10px 12px;background:var(--surface2);border-radius:7px;border-left:3px solid var(--accent);line-height:1.5;}
+</style>
+</head>
+<body>
+
+<div id="lobby" class="screen active">
+<div style="max-width:900px;margin:0 auto;width:100%;padding:28px 20px 48px;">
+  <div class="toprow">
+    <div class="logowrap"><div class="logobadge">CAREERLAB</div><div class="logotxt">Simulator IA</div></div>
+    <div class="themepill">Management</div>
+  </div>
+  <div class="herosec">
+    <h1>Les <em>10 défis clés</em><br>du manager au quotidien</h1>
+    <p>Chaque scénario simule une vraie situation managériale. Pratiquez avec un personnage IA, recevez un feedback détaillé.</p>
+    <div class="herostat">
+      <div class="hstat"><b>10</b> scénarios</div>
+      <div class="hstat"><b>3 min</b> chrono</div>
+      <div class="hstat"><b>Feedback IA</b> instantané</div>
+    </div>
+  </div>
+  <div class="seclbl">CHOISISSEZ UN DÉFI</div>
+  <div id="scgrid"></div>
+  <div class="preview" id="preview">
+    <div class="pvlbl">SCÉNARIO SÉLECTIONNÉ</div>
+    <div class="pvtitle" id="pvtitle"></div>
+    <div class="pvctx" id="pvctx"></div>
+    <div class="pvrow">
+      <div class="pvav" id="pvem"></div>
+      <div><div class="pvname" id="pvname"></div><div class="pvrole" id="pvrole"></div></div>
+    </div>
+  </div>
+  <button class="startbtn" id="startbtn" disabled onclick="startSim()">Lancer la simulation</button>
+</div>
+</div>
+
+<div id="sim" class="screen">
+  <div class="lp">
+    <div class="simlbl">CAREERLAB MANAGEMENT</div>
+    <div class="avblk">
+      <div class="avwrap">
+        <div class="avc sn" id="avc"><span id="avem">👤</span></div>
+        <div class="avring" id="avring"></div>
+      </div>
+      <div>
+        <div class="avname" id="avname">—</div>
+        <div class="avrole" id="avrole">—</div>
+        <div class="moodbadge">
+          <div class="mooddot" id="mooddot" style="background:var(--text3)"></div>
+          <div class="moodlbl" id="moodlbl">En attente</div>
+        </div>
+      </div>
+    </div>
+    <div class="ctxcard" id="ctxcard"></div>
+    <div class="guide-card" id="guidepanel" style="display:none">
+      <div class="guide-method" id="guide-method-lbl"></div>
+      <div id="guide-letters"></div>
+      <div class="guide-reminder" id="guide-reminder"></div>
+    </div>
+  </div>
+  <div class="rp">
+    <div class="simtop">
+      <div><div class="tbname" id="tbname">—</div><div class="tbtheme">Management · CareerLab</div></div>
+      <div class="timerwrap">
+        <div>
+          <div class="timerval" id="timerval">5:00</div>
+          <div class="timerbw"><div class="timerbar" id="timerbar" style="width:100%"></div></div>
+        </div>
+      </div>
+    </div>
+    <div class="msgs" id="msgs"></div>
+    <div class="statbar"><div class="statpulse"></div><span id="stattxt">Prêt</span></div>
+    <div class="inpzone">
+      <div class="inprow">
+        <textarea class="siminp" id="siminp" placeholder="Votre réponse en tant que manager..." rows="1" onkeydown="handleKey(event)" oninput="autoResize(this)" disabled></textarea>
+        <button class="sendbtn" id="sendbtn" onclick="sendMsg()" disabled>Envoyer</button>
+        <button class="endbtn" onclick="endSim()">Terminer</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="fb" class="screen">
+  <div class="fbh"><h1>Votre feedback</h1><p id="fbdesc">—</p></div>
+  <div class="gcard">
+    <div class="gscore" id="gscore">—</div>
+    <div class="glbl">Score global sur 100</div>
+    <div class="gbw"><div class="gbar2" id="gbar2"></div></div>
+    <div class="gphrase" id="gphrase"></div>
+  </div>
+  <div class="metrow">
+    <div class="metcard"><div class="metlbl">DURÉE</div><div class="metval" id="fdur">—</div><div class="metsub">de conversation</div></div>
+    <div class="metcard"><div class="metlbl">ÉCHANGES</div><div class="metval" id="fexch">—</div><div class="metsub">messages envoyés</div></div>
+  </div>
+  <div class="skgrid2" id="skgrid2"></div>
+  <div id="fbblocs"></div>
+  <div class="fb-guide-card" id="fb-guide">
+    <div class="fb-guide-title">MÉTHODE RECOMMANDÉE POUR CE TYPE DE SITUATION</div>
+    <div class="fb-guide-method" id="fb-guide-method"></div>
+    <div class="fb-guide-rows" id="fb-guide-rows"></div>
+    <div class="fb-guide-reminder" id="fb-guide-reminder"></div>
+  </div>
+  <div class="trloc"><div class="trloct">TRANSCRIPTION</div><div id="transcript"></div></div>
+  <div class="actrow">
+    <button class="btnr" onclick="retry()">Recommencer ce scénario</button>
+    <button class="btnb" onclick="goLobby()">Choisir un autre défi</button>
+  </div>
+</div>
+
+<script>
+var SC = [{"id": 1, "title": "Déléguer sans micro-manager", "desc": "Confier une mission importante et vraiment lâcher prise.", "emoji": "🎯", "persona": "Ines Gharbi", "role": "Chef de projet junior · 2 ans", "skills": ["Délégation", "Confiance", "Clarté", "Autonomie"], "context": "Vous devez déléguer la coordination d'un projet client stratégique à Ines pour la première fois. Elle a les compétences mais vous avez du mal à ne pas tout contrôler. Elle attend vos instructions.", "mood": {"neutral": "😐", "positive": "😊", "tense": "😟", "closed": "😶"}, "opening": "Bonjour. Vous vouliez me voir pour me parler d'un projet ?", "sys": "Tu joues Ines Gharbi, chef de projet junior compétente mais peu habituée aux vraies délégations. Tu as besoin de clarté sur les responsabilités et le niveau d'autonomie réel. Si la délégation est floue ou si le manager garde la main sur tout, tu poses des questions hésitantes. Si le cadre est clair et la confiance exprimée, tu t'engages pleinement. Tu poses des questions précises comme : est-ce que je peux décider seule sur ce point, à qui je m'adresse en cas de blocage. 2-3 phrases max par réponse.", "guide": {"method": "DESC", "letters": [{"l": "D", "word": "Décrire", "tip": "Décrivez la mission clairement : quoi, pour quand, quel résultat attendu."}, {"l": "E", "word": "Expliquer", "tip": "Expliquez pourquoi vous choisissez cette personne pour cette mission."}, {"l": "S", "word": "Spécifier", "tip": "Précisez les limites de décision : ce qu'elle peut décider seule et ce qui nécessite votre accord."}, {"l": "C", "word": "Confirmer", "tip": "Vérifiez la compréhension : demandez-lui de reformuler la mission avec ses mots."}], "reminder": "Déléguer, c'est donner le quoi et le pourquoi — pas le comment."}}, {"id": 2, "title": "Donner un feedback difficile", "desc": "Dire ce qui ne va pas de façon constructive, sans démotiver.", "emoji": "💬", "persona": "Karim Jaziri", "role": "Commercial senior · 5 ans", "skills": ["Feedback", "Assertivité", "Empathie", "Bienveillance"], "context": "Karim est un bon commercial mais ses rapports d'activité sont systématiquement incomplets et rendus en retard depuis 3 mois. Vous devez lui en parler clairement sans perdre sa motivation.", "mood": {"neutral": "😐", "positive": "🙂", "tense": "😒", "closed": "😑"}, "opening": "Vous m'avez convoqué ? Tout va bien ?", "sys": "Tu joues Karim Jaziri, commercial senior performant qui néglige ses rapports. Tu minimises avec des phrases comme : j'avais d'autres priorités, les chiffres sont bons non. Tu es sur la défensive si le feedback semble être une attaque. Tu réagis positivement si le manager reconnaît d'abord tes résultats avant d'aborder le problème, et s'il est factuel et précis. Tu proposes des solutions si tu te sens entendu. 2-3 phrases naturelles.", "guide": {"method": "SBI", "letters": [{"l": "S", "word": "Situation", "tip": "Décrivez le contexte précis : quand, où, dans quelle circonstance."}, {"l": "B", "word": "Behavior", "tip": "Décrivez le comportement observé — jamais l'intention ou la personnalité."}, {"l": "I", "word": "Impact", "tip": "Exprimez l'impact concret sur l'équipe, le client ou les résultats."}], "reminder": "Restez factuel. Ce que vous avez vu, pas ce que vous pensez de lui."}}, {"id": 3, "title": "Recadrer un collaborateur", "desc": "Remettre les choses à plat avec fermeté et respect.", "emoji": "⚠️", "persona": "Mokhtar Slim", "role": "Technicien · 6 ans d'ancienneté", "skills": ["Assertivité", "Recadrage", "Écoute", "Fermeté"], "context": "Mokhtar arrive en retard 3 à 4 fois par semaine depuis 6 semaines. Deux collègues ont signalé qu'il répond sèchement aux clients. C'est votre premier entretien de recadrage formel.", "mood": {"neutral": "😶", "positive": "😌", "tense": "😤", "closed": "🙄"}, "opening": "Karim entre dans votre bureau, s'assoit les bras croisés, regard fuyant.", "sys": "Tu joues Mokhtar Slim, technicien expérimenté avec 6 ans d'ancienneté. Tu minimises tes retards avec des excuses vagues : transport, fatigue, problèmes personnels. Tu te fermes complètement si le manager est accusateur ou autoritaire. Tu t'ouvres progressivement si le manager est ferme mais respectueux, écoute ton point de vue et pose des questions ouvertes. Tu révèles alors des difficultés personnelles réelles. 2-3 phrases max.", "guide": {"method": "DESC", "letters": [{"l": "D", "word": "Décrire", "tip": "Décrivez les faits observés sans jugement : dates, fréquence, comportements."}, {"l": "E", "word": "Exprimer", "tip": "Exprimez l'impact sur l'équipe ou le client, pas votre ressenti personnel."}, {"l": "S", "word": "Spécifier", "tip": "Demandez clairement ce qui doit changer et dans quel délai."}, {"l": "C", "word": "Conséquences", "tip": "Précisez les conséquences si rien ne change — sans menacer, mais clairement."}], "reminder": "Recadrer n'est pas punir. C'est clarifier ce qui est attendu."}}, {"id": 4, "title": "Motiver une équipe qui s'essoufle", "desc": "Redonner de l'énergie et du sens sans fausses promesses.", "emoji": "🔋", "persona": "Sarra Belhaj", "role": "Porte-parole informelle de l'équipe", "skills": ["Motivation", "Empathie", "Sens", "Leadership"], "context": "Votre équipe de 8 personnes est épuisée après 4 mois de surcharge. Les délais s'accumulent. Sarra, porte-parole informelle, vient vous dire que l'équipe décroche.", "mood": {"neutral": "😔", "positive": "🙂", "tense": "😠", "closed": "😶"}, "opening": "Je vous parle franchement parce que vous devez savoir. L'équipe est à bout. Les gens n'en peuvent plus.", "sys": "Tu joues Sarra Belhaj, porte-parole informelle d'une équipe épuisée. Tu parles franchement au nom du groupe. Tu attends une réaction honnête et pas un discours vague. Si le manager minimise ou promet sans concret, tu deviens plus froide. Si le manager écoute vraiment, reconnaît la situation et propose des actions concrètes à court terme, tu montres de l'espoir. Tu poses des questions directes comme : concrètement qu'est-ce qui va changer. 2-3 phrases.", "guide": {"method": "CARE", "letters": [{"l": "C", "word": "Comprendre", "tip": "Commencez par écouter sans défendre. Qu'est-ce qui pèse vraiment ?"}, {"l": "A", "word": "Accuser réception", "tip": "Reconnaissez la charge sans minimiser. Validez ce qui est réel."}, {"l": "R", "word": "Répondre", "tip": "Proposez 1-2 actions concrètes à court terme, pas des promesses vagues."}, {"l": "E", "word": "Engager", "tip": "Demandez ce dont l'équipe a besoin de vous maintenant."}], "reminder": "Les équipes ne demandent pas la perfection. Elles demandent d'être entendues."}}, {"id": 5, "title": "Gérer la résistance passive", "desc": "Celui qui dit oui mais ne fait pas — comment briser ce pattern.", "emoji": "🚧", "persona": "Walid Mabrouk", "role": "Analyste · 4 ans", "skills": ["Assertivité", "Questionnement", "Engagement", "Clarté"], "context": "Walid acquiesce à tout en réunion mais ses livrables arrivent systématiquement en retard ou incomplets. Il a l'air d'accord mais rien ne bouge. Vous l'avez convoqué pour comprendre.", "mood": {"neutral": "😐", "positive": "🙂", "tense": "😒", "closed": "😑"}, "opening": "Oui vous m'avez appelé ? Ton poli, sourire de façade.", "sys": "Tu joues Walid Mabrouk, analyste passif-résistant. Tu acquiesces à tout verbalement : oui oui, bien sûr, pas de problème. Tes vraies résistances : trop de travail en parallèle, manque de clarté sur les priorités, sentiment de ne pas être écouté. Tu révèles ces vrais blocages uniquement si le manager pose des questions précises et fermées comme : quand exactement, qu'est-ce qui t'en a empêché. 2-3 phrases naturelles.", "guide": {"method": "SBI", "letters": [{"l": "S", "word": "Situation", "tip": "Nommez les faits précis : quel livrable, quelle date, combien de fois."}, {"l": "B", "word": "Behavior", "tip": "Décrivez le comportement — pas l'intention. Ce que vous observez, pas ce que vous pensez."}, {"l": "I", "word": "Impact", "tip": "Montrez l'impact concret sur le projet ou l'équipe. Rendez visible ce que ça coûte."}], "reminder": "Posez des questions fermées et précises. Évitez les questions auxquelles il peut dire oui."}}, {"id": 6, "title": "Reprendre le contrôle d'une réunion", "desc": "Recentrer sans écraser — reprendre la main avec tact.", "emoji": "🔀", "persona": "Hichem Dridi", "role": "Chef de service · Profil dominant", "skills": ["Leadership", "Assertivité", "Facilitation", "Gestion de groupe"], "context": "En pleine réunion de projet, Hichem monopolise la parole depuis 15 minutes et oriente tout vers ses priorités personnelles. Les participants regardent leurs téléphones. Vous devez reprendre le contrôle.", "mood": {"neutral": "😐", "positive": "🙂", "tense": "😤", "closed": "😒"}, "opening": "Donc comme je le disais, le vrai problème c'est le budget de mon département. Si on réglait ça tout irait mieux. Il continue de parler.", "sys": "Tu joues Hichem Dridi, chef de service expansif qui monopolise les réunions. Tu n'es pas malveillant — tu es convaincu que tes sujets sont prioritaires. Tu réagis très mal si on te coupe brutalement en public. Tu acceptes d'être recadré si c'est fait avec tact et valorisation de ta contribution. Tu testes si le manager a vraiment le contrôle. 2-3 phrases, ton assertif.", "guide": {"method": "STOP", "letters": [{"l": "S", "word": "Stopper", "tip": "Interrompez poliment mais clairement. Une main levée ou un prénom suffit."}, {"l": "T", "word": "Transitionner", "tip": "Valorisez brièvement le point soulevé avant de recentrer."}, {"l": "O", "word": "Orienter", "tip": "Ramenez explicitement vers l'ordre du jour : quel sujet, quel objectif."}, {"l": "P", "word": "Poursuivre", "tip": "Donnez la parole à quelqu'un d'autre pour reprendre le flux."}], "reminder": "Recadrer une réunion n'est pas impoli. C'est respecter le temps de tous."}}, {"id": 7, "title": "Adapter son style de management", "desc": "Sortir du management uniforme — parler selon le profil.", "emoji": "🎭", "persona": "Rim Sfar", "role": "Nouvelle recrue · Haut potentiel", "skills": ["Adaptabilité", "Écoute", "Diagnostic", "Management situationnel"], "context": "Rim vient d'intégrer l'équipe. Brillante dans son ancien poste, elle semble aujourd'hui hésitante et attend qu'on lui dise quoi faire. Vous devez comprendre son profil et ajuster votre approche.", "mood": {"neutral": "😐", "positive": "😊", "tense": "😟", "closed": "😶"}, "opening": "Bonjour. Vous vouliez me voir ? Regard incertain, posture fermée.", "sys": "Tu joues Rim Sfar, nouvelle recrue brillante mais déstabilisée par un environnement nouveau. Tu n'es pas démotivée — tu manques de repères. Tu réagis très bien au manager qui prend le temps de comprendre ton fonctionnement, qui explique le contexte et qui adapte ses attentes. Tu te fermes si le manager suppose que tu dois déjà être autonome à 100%. 2-3 phrases naturelles.", "guide": {"method": "SKILL-WILL", "letters": [{"l": "SK", "word": "Skill", "tip": "Évaluez le niveau de compétence réel : sait-elle faire cette tâche précise ?"}, {"l": "W", "word": "Will", "tip": "Évaluez la motivation : veut-elle le faire, a-t-elle confiance en elle ?"}, {"l": "AD", "word": "Adapter", "tip": "Ajustez votre style : directive si skill faible, soutien si will faible, délégation si les deux sont forts."}], "reminder": "Ne managez pas la personne — managez la situation. Le même collaborateur peut avoir besoin de styles différents selon la tâche."}}, {"id": 8, "title": "Bâtir la confiance avec une nouvelle équipe", "desc": "Les premiers 90 jours — créer le lien sans imposer.", "emoji": "🤝", "persona": "Tarak Hammami", "role": "Référent informel · 8 ans d'ancienneté", "skills": ["Confiance", "Écoute", "Leadership", "Légitimité"], "context": "Vous venez de prendre la direction d'une équipe soudée dont le manager adoré vient de partir en retraite. Tarak, référent informel, vous teste discrètement. Vous devez établir votre légitimité sans effacer le passé.", "mood": {"neutral": "😐", "positive": "🙂", "tense": "😒", "closed": "😑"}, "opening": "Bienvenue dans l'équipe. Ton poli mais distant. Comment vous comptez vous organiser ?", "sys": "Tu joues Tarak Hammami, pilier de l'équipe depuis 8 ans. Tu n'es pas hostile mais tu protèges l'équipe et tu es méfiant face aux changements. Tu testes le nouveau manager : est-ce qu'il écoute ou impose, est-ce qu'il respecte ce qui a été construit. Tu deviens un allié si le manager montre une curiosité sincère pour l'équipe et valorise ce qui existe. Tu résistes si le manager arrive avec ses certitudes. 2-3 phrases directes.", "guide": {"method": "ÉCOUTE ACTIVE", "letters": [{"l": "É", "word": "Écouter", "tip": "Posez des questions sur ce qui existe déjà, pas sur ce que vous allez changer."}, {"l": "C", "word": "Comprendre", "tip": "Montrez que vous cherchez à apprendre, pas à imposer."}, {"l": "V", "word": "Valoriser", "tip": "Reconnaissez explicitement ce qui a bien fonctionné avant votre arrivée."}, {"l": "P", "word": "Proposer", "tip": "Partagez votre vision seulement après avoir écouté — jamais avant."}], "reminder": "Les premières 30 jours sont faits pour écouter. Vous aurez le temps de décider ensuite."}}, {"id": 9, "title": "Médiation entre deux collaborateurs", "desc": "Rétablir la collaboration sans prendre parti.", "emoji": "⚡", "persona": "Nadia Kouki", "role": "Responsable admin · En conflit ouvert", "skills": ["Médiation", "Neutralité", "Empathie", "Résolution de conflit"], "context": "Nadia et son collègue Bilel sont en conflit ouvert depuis 3 semaines. Le ton monte en réunion, les emails sont secs, l'équipe est mal à l'aise. Vous rencontrez Nadia en premier pour comprendre sa version.", "mood": {"neutral": "😒", "positive": "😐", "tense": "😡", "closed": "😤"}, "opening": "Je suis contente que vous ayez enfin réagi. Ce que fait Bilel est inacceptable et tout le monde le voit.", "sys": "Tu joues Nadia Kouki, convaincue d'avoir raison dans le conflit avec Bilel. Tu es émotionnellement investie et tu veux que le manager prenne ton parti. Tu t'adoucis si le manager reste neutre, écoute vraiment ta version sans la valider entièrement et cherche une solution juste. Tu te braques si le manager défend Bilel. Tu peux reconnaître une part de responsabilité si tu te sens vraiment entendue. 2-3 phrases émotionnelles mais professionnelles.", "guide": {"method": "NEUTRALITÉ", "letters": [{"l": "N", "word": "Ne pas juger", "tip": "Écoutez la version sans valider ni invalider. Hochez la tête — ne dites pas vous avez raison."}, {"l": "R", "word": "Reformuler", "tip": "Reformulez ce que vous entendez pour montrer que vous avez compris, sans prendre parti."}, {"l": "S", "word": "Séparer faits et émotions", "tip": "Distinguez ce qui s'est passé (faits) de ce qu'elle ressent (émotions). Validez les deux séparément."}, {"l": "O", "word": "Orienter vers la solution", "tip": "Redirigez vers ce qui peut changer : pas ce que l'autre a fait, mais ce que chacun peut faire différemment."}], "reminder": "Votre rôle est de faciliter, pas de juger. La solution appartient aux deux parties."}}, {"id": 10, "title": "Développer l'autonomie d'un collaborateur", "desc": "Passer de boss à coach — faire grandir sans faire à la place.", "emoji": "🌱", "persona": "Ayoub Trabelsi", "role": "Collaborateur en développement · Potentiel confirmé", "skills": ["Coaching", "Questions ouvertes", "Autonomie", "Développement"], "context": "Ayoub a du potentiel mais vient vous voir pour chaque décision même mineure. Il est en mode dépendance totale. Vous voulez l'aider à développer son autonomie sans le laisser tomber.", "mood": {"neutral": "😐", "positive": "😊", "tense": "😟", "closed": "😶"}, "opening": "Bonjour. J'ai un problème avec le client Tunisair. Je ne sais pas quoi faire. Vous pouvez m'aider à décider ?", "sys": "Tu joues Ayoub Trabelsi, collaborateur compétent mais dépendant. Tu cherches constamment la validation de ton manager avant d'agir. Ce n'est pas de la paresse — tu as peur de te tromper et d'être jugé. Tu réagis très bien quand le manager te pose des questions ouvertes comme : qu'est-ce que toi tu ferais, quelles options tu vois. Tu résistes un peu au début en disant que tu veux son avis. Tu gagnes en confiance si le manager croit en toi explicitement. 2-3 phrases naturelles.", "guide": {"method": "GROW", "letters": [{"l": "G", "word": "Goal", "tip": "Demandez-lui quel est l'objectif qu'il essaie d'atteindre avec ce client."}, {"l": "R", "word": "Reality", "tip": "Demandez-lui ce qu'il sait déjà sur la situation. Qu'est-ce qu'il a déjà essayé ?"}, {"l": "O", "word": "Options", "tip": "Demandez-lui quelles options il voit. Au moins deux. Sans évaluer immédiatement."}, {"l": "W", "word": "Will", "tip": "Demandez-lui laquelle il choisit et pourquoi. Laissez-le décider."}], "reminder": "Chaque fois que vous répondez à sa place, vous retardez son autonomie d'une semaine."}}];
+
+var cur = null, hist = [], sText = "", exch = 0;
+var tLeft = 300, tInt = null, loading = false, ended = false, t0 = null;
+
+
+function showGuidePanel() {
+  if (!cur || !cur.guide) return;
+  var g = cur.guide;
+  var panel = document.getElementById("guidepanel");
+  document.getElementById("guide-method-lbl").textContent = "MÉTHODE " + g.method;
+  var lettersDiv = document.getElementById("guide-letters");
+  lettersDiv.innerHTML = "";
+  for (var i = 0; i < g.letters.length; i++) {
+    var item = g.letters[i];
+    var row = document.createElement("div"); row.className = "guide-row";
+    var lbl = document.createElement("div"); lbl.className = "guide-letter"; lbl.textContent = item.l;
+    var content = document.createElement("div"); content.className = "guide-content";
+    var word = document.createElement("div"); word.className = "guide-word"; word.textContent = item.word;
+    var tip = document.createElement("div"); tip.className = "guide-tip"; tip.textContent = item.tip;
+    content.appendChild(word); content.appendChild(tip);
+    row.appendChild(lbl); row.appendChild(content);
+    lettersDiv.appendChild(row);
+  }
+  document.getElementById("guide-reminder").textContent = g.reminder;
+  panel.style.display = "block";
+}
+
+function renderGuideInFeedback() {
+  if (!cur || !cur.guide) return;
+  var g = cur.guide;
+  document.getElementById("fb-guide-method").textContent = g.method;
+  var rows = document.getElementById("fb-guide-rows");
+  rows.innerHTML = "";
+  for (var i = 0; i < g.letters.length; i++) {
+    var item = g.letters[i];
+    var row = document.createElement("div"); row.className = "fb-guide-row";
+    var lbl = document.createElement("div"); lbl.className = "fb-guide-l"; lbl.textContent = item.l;
+    var txt = document.createElement("div"); txt.className = "fb-guide-text";
+    var word = document.createElement("div"); word.className = "fb-guide-word"; word.textContent = item.word;
+    var tip = document.createElement("div"); tip.className = "fb-guide-tip"; tip.textContent = item.tip;
+    txt.appendChild(word); txt.appendChild(tip);
+    row.appendChild(lbl); row.appendChild(txt);
+    rows.appendChild(row);
+  }
+  document.getElementById("fb-guide-reminder").textContent = g.reminder;
+}
+
+function initLobby() {
+  var g = document.getElementById("scgrid");
+  g.innerHTML = "";
+  for (var i = 0; i < SC.length; i++) {
+    (function(s, idx) {
+      var c = document.createElement("div");
+      c.className = "scard";
+
+      var numDiv = document.createElement("div");
+      numDiv.className = "scnum";
+      numDiv.textContent = "DÉFI " + (idx < 9 ? "0" : "") + (idx + 1);
+      c.appendChild(numDiv);
+
+      var titleDiv = document.createElement("div");
+      titleDiv.className = "sctitle";
+      titleDiv.textContent = s.emoji + " " + s.title;
+      c.appendChild(titleDiv);
+
+      var descDiv = document.createElement("div");
+      descDiv.className = "scdesc";
+      descDiv.textContent = s.desc;
+      c.appendChild(descDiv);
+
+      var skillsDiv = document.createElement("div");
+      skillsDiv.className = "scskills";
+      for (var j = 0; j < s.skills.length; j++) {
+        var sk = document.createElement("span");
+        sk.className = "scsk";
+        sk.textContent = s.skills[j];
+        skillsDiv.appendChild(sk);
+      }
+      c.appendChild(skillsDiv);
+
+      c.onclick = function() { selectSc(s, c); };
+      g.appendChild(c);
+    })(SC[i], i);
+  }
+}
+
+function selectSc(s, el) {
+  var cards = document.querySelectorAll(".scard");
+  for (var i = 0; i < cards.length; i++) cards[i].classList.remove("sel");
+  el.classList.add("sel");
+  cur = s;
+  document.getElementById("pvtitle").textContent = s.emoji + " " + s.title;
+  document.getElementById("pvctx").textContent = s.context;
+  document.getElementById("pvem").textContent = s.emoji;
+  document.getElementById("pvname").textContent = s.persona;
+  document.getElementById("pvrole").textContent = s.role;
+  document.getElementById("preview").classList.add("vis");
+  document.getElementById("startbtn").disabled = false;
+}
+
+function startSim() {
+  if (!cur) return;
+  showScreen("sim");
+  document.getElementById("avname").textContent = cur.persona;
+  document.getElementById("avrole").textContent = cur.role;
+  document.getElementById("avem").textContent = cur.emoji;
+  document.getElementById("tbname").textContent = cur.title;
+  document.getElementById("ctxcard").textContent = cur.context;
+  hist = []; sText = ""; exch = 0; tLeft = 300;
+  ended = false; loading = false; t0 = Date.now();
+  document.getElementById("msgs").innerHTML = "";
+  document.getElementById("siminp").disabled = true;
+  document.getElementById("sendbtn").disabled = true;
+  setMood("neutral");
+  setStat("Démarrage...");
+  addMsg("sys", "Contexte : " + cur.context);
+  setTimeout(function() {
+    addMsg("ai", cur.opening);
+    hist = [{role: "assistant", content: cur.opening}];
+    sText += cur.persona + ": " + cur.opening + "\n";
+    document.getElementById("siminp").disabled = false;
+    document.getElementById("sendbtn").disabled = false;
+    document.getElementById("siminp").focus();
+    setStat("Simulation en cours...");
+    showGuidePanel();
+    startTimer();
+  }, 700);
+}
+
+function startTimer() {
+  updateTimer();
+  tInt = setInterval(function() {
+    tLeft--;
+    updateTimer();
+    if (tLeft <= 0) { clearInterval(tInt); if (!ended) endSim(); }
+  }, 1000);
+}
+
+function updateTimer() {
+  var m = Math.floor(tLeft / 60), s = tLeft % 60;
+  document.getElementById("timerval").textContent = m + ":" + (s < 10 ? "0" : "") + s;
+  var pct = (tLeft / 300) * 100;
+  document.getElementById("timerbar").style.width = pct + "%";
+  var tv = document.getElementById("timerval");
+  if (tLeft <= 30) { tv.className = "timerval danger"; document.getElementById("timerbar").style.background = "#e05555"; }
+  else if (tLeft <= 60) { tv.className = "timerval warn"; document.getElementById("timerbar").style.background = "#e8b86d"; }
+  else { tv.className = "timerval"; document.getElementById("timerbar").style.background = "#4caf7d"; }
+}
+
+function addMsg(role, text) {
+  var z = document.getElementById("msgs");
+  var d = document.createElement("div");
+  if (role === "sys") {
+    d.className = "msg";
+    d.style.alignSelf = "center";
+    d.style.maxWidth = "100%";
+    var b = document.createElement("div");
+    b.className = "bubble sys";
+    b.textContent = text;
+    d.appendChild(b);
+  } else {
+    d.className = "msg " + role;
+    var lbl = document.createElement("div");
+    lbl.className = "msglbl";
+    lbl.textContent = role === "ai" ? cur.persona : "VOUS";
+    var b = document.createElement("div");
+    b.className = "bubble";
+    b.textContent = text;
+    d.appendChild(lbl);
+    d.appendChild(b);
+  }
+  z.appendChild(d);
+  z.scrollTop = z.scrollHeight;
+}
+
+function showTyping() {
+  var z = document.getElementById("msgs");
+  var d = document.createElement("div");
+  d.className = "msg ai";
+  d.id = "typingdiv";
+  var lbl = document.createElement("div");
+  lbl.className = "msglbl";
+  lbl.textContent = cur.persona;
+  var b = document.createElement("div");
+  b.className = "bubble";
+  var tw = document.createElement("div");
+  tw.className = "typing";
+  for (var i = 0; i < 3; i++) {
+    var dot = document.createElement("div");
+    dot.className = "tdot";
+    tw.appendChild(dot);
+  }
+  b.appendChild(tw);
+  d.appendChild(lbl);
+  d.appendChild(b);
+  z.appendChild(d);
+  z.scrollTop = z.scrollHeight;
+}
+
+function removeTyping() {
+  var t = document.getElementById("typingdiv");
+  if (t) t.remove();
+}
+
+function setStat(t) { document.getElementById("stattxt").textContent = t; }
+
+function setMood(state) {
+  var colors = {neutral: "#888", positive: "#4caf7d", tense: "#e05555", closed: "#9b7fd4"};
+  var labels = {neutral: "Neutre", positive: "Positif", tense: "Tendu", closed: "Fermé"};
+  var classes = {neutral: "sn", positive: "sp", tense: "st", closed: "sc"};
+  document.getElementById("avc").className = "avc " + (classes[state] || "sn");
+  document.getElementById("avring").className = "avring " + (classes[state] || "");
+  document.getElementById("mooddot").style.background = colors[state] || "#888";
+  document.getElementById("moodlbl").textContent = labels[state] || "Neutre";
+  if (cur && cur.mood && cur.mood[state]) {
+    document.getElementById("avem").textContent = cur.mood[state];
+  }
+}
+
+function buildMessages(userText) {
+  var msgs = hist.concat([{role: "user", content: userText}]);
+  var clean = [];
+  for (var i = 0; i < msgs.length; i++) {
+    var msg = msgs[i];
+    if (clean.length === 0) {
+      if (msg.role === "user") clean.push(msg);
+      continue;
+    }
+    var last = clean[clean.length - 1];
+    if (msg.role !== last.role) {
+      clean.push(msg);
+    } else if (msg.role === "user") {
+      clean[clean.length - 1] = {role: "user", content: last.content + " " + msg.content};
+    }
+  }
+  return clean;
+}
+
+function sendMsg() {
+  if (loading || ended) return;
+  var inp = document.getElementById("siminp");
+  var text = inp.value.trim();
+  if (!text) return;
+  loading = true;
+  inp.value = "";
+  inp.style.height = "auto";
+  document.getElementById("sendbtn").disabled = true;
+  addMsg("user", text);
+  sText += "Vous: " + text + "\n";
+  exch++;
+  showTyping();
+  setStat(cur.persona + " réfléchit...");
+  var msgs = buildMessages(text);
+  var body = JSON.stringify({
+    model: "claude-sonnet-4-20250514",
+    max_tokens: 280,
+    system: cur.sys,
+    messages: msgs
+  });
+  var timeout = new Promise(function(_, rej) {
+    setTimeout(function() { rej(new Error("timeout")); }, 30000);
+  });
+  Promise.race([
+    fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: body
+    }),
+    timeout
+  ]).then(function(res) {
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    return res.json();
+  }).then(function(data) {
+    var reply = data && data.content && data.content[0] ? data.content[0].text : null;
+    removeTyping();
+    if (reply && reply.trim()) {
+      hist.push({role: "user", content: text});
+      hist.push({role: "assistant", content: reply.trim()});
+      sText += cur.persona + ": " + reply.trim() + "\n";
+      addMsg("ai", reply.trim());
+      updateMood(reply, text);
+      setStat("Simulation en cours...");
+    } else {
+      exch--;
+      addMsg("ai", "Pas de réponse. Vérifiez votre connexion.");
+      setStat("Erreur — réessayez");
+    }
+    loading = false;
+    if (!ended) {
+      document.getElementById("sendbtn").disabled = false;
+      document.getElementById("siminp").disabled = false;
+      document.getElementById("siminp").focus();
+    }
+  }).catch(function(err) {
+    removeTyping();
+    exch--;
+    addMsg("ai", "Pas de réponse. Vérifiez votre connexion et réessayez.");
+    setStat("Erreur — réessayez");
+    loading = false;
+    if (!ended) {
+      document.getElementById("sendbtn").disabled = false;
+      document.getElementById("siminp").disabled = false;
+    }
+  });
+}
+
+function updateMood(r, u) {
+  var rv = r.toLowerCase(), uv = u.toLowerCase();
+  var pos = ["merci", "compris", "accord", "bien", "effectivement", "exactement"];
+  var tense = ["inacceptable", "inadmissible", "furieux", "pas normal"];
+  var closed = ["peu importe", "laissez", "bof"];
+  var found = "neutral";
+  for (var i = 0; i < pos.length; i++) {
+    if (rv.indexOf(pos[i]) >= 0 || uv.indexOf(pos[i]) >= 0) { found = "positive"; break; }
+  }
+  if (found === "neutral") {
+    for (var i = 0; i < tense.length; i++) {
+      if (rv.indexOf(tense[i]) >= 0) { found = "tense"; break; }
+    }
+  }
+  if (found === "neutral") {
+    for (var i = 0; i < closed.length; i++) {
+      if (rv.indexOf(closed[i]) >= 0) { found = "closed"; break; }
+    }
+  }
+  setMood(found);
+}
+
+function endSim() {
+  if (ended) return;
+  ended = true;
+  clearInterval(tInt);
+  document.getElementById("siminp").disabled = true;
+  document.getElementById("sendbtn").disabled = true;
+  setStat("Génération du feedback...");
+  var el = Math.round((Date.now() - t0) / 1000);
+  var dur = Math.floor(el / 60) + "m " + (el % 60) + "s";
+  getFeedback().then(function(fb) {
+    renderFeedback(fb, dur);
+  }).catch(function() {
+    showScreen("fb");
+    document.getElementById("gscore").textContent = "—";
+    var errp = document.createElement("p");
+    errp.style.color = "var(--text2)";
+    errp.style.fontSize = "14px";
+    errp.style.padding = "20px 0";
+    errp.textContent = "Erreur lors du feedback. Réessayez.";
+    document.getElementById("fbblocs").innerHTML = "";
+    document.getElementById("fbblocs").appendChild(errp);
+  });
+}
+
+function getFeedback() {
+  var prompt = "Tu es expert en formation managériale. Analyse cet entretien de simulation.\nDÉFI: " + cur.title + "\nCONTEXTE: " + cur.context + "\nCOMPÉTENCES: " + cur.skills.join(", ") + "\nTRANSCRIPTION:\n" + sText + "\nRéponds UNIQUEMENT en JSON valide sans markdown:\n{\"global\":72,\"phrase_bilan\":\"phrase précise\",\"skills\":[{\"name\":\"Compétence\",\"score\":75,\"comment\":\"observation\"}],\"points_forts\":[\"point fort concret\"],\"axes_amelioration\":[\"axe actionnable\"],\"conseil_cle\":\"conseil unique\"}\nÉvalue uniquement: " + cur.skills.join(", ");
+  return Promise.race([
+    fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({model: "claude-sonnet-4-20250514", max_tokens: 1200, messages: [{role: "user", content: prompt}]})
+    }).then(function(res) { return res.json(); }).then(function(data) {
+      var txt = data.content[0].text.replace(/```json|```/g, "").trim();
+      return JSON.parse(txt);
+    }),
+    new Promise(function(_, r) { setTimeout(function() { r(new Error("timeout")); }, 45000); })
+  ]);
+}
+
+function renderFeedback(fb, dur) {
+  showScreen("fb");
+  renderGuideInFeedback();
+  document.getElementById("fbdesc").textContent = cur.emoji + " " + cur.title + " - Management";
+  document.getElementById("fdur").textContent = dur;
+  document.getElementById("fexch").textContent = exch;
+  var gs = fb.global || 0;
+  var col = gs >= 70 ? "#4caf7d" : gs >= 50 ? "#e8b86d" : "#e05555";
+  document.getElementById("gscore").textContent = gs;
+  document.getElementById("gscore").style.color = col;
+  document.getElementById("gbar2").style.width = gs + "%";
+  document.getElementById("gbar2").style.background = col;
+  document.getElementById("gphrase").textContent = fb.phrase_bilan || "";
+
+  var skgrid = document.getElementById("skgrid2");
+  skgrid.innerHTML = "";
+  var skills = fb.skills || [];
+  for (var i = 0; i < skills.length; i++) {
+    var s = skills[i];
+    var c = s.score >= 70 ? "#4caf7d" : s.score >= 50 ? "#e8b86d" : "#e05555";
+    var card = document.createElement("div");
+    card.className = "skcard";
+    var nm = document.createElement("div"); nm.className = "skname"; nm.textContent = s.name;
+    var vl = document.createElement("div"); vl.className = "skval2"; vl.textContent = s.score; vl.style.color = c;
+    var bw = document.createElement("div"); bw.className = "skbw";
+    var br = document.createElement("div"); br.className = "skbar"; br.style.width = s.score + "%"; br.style.background = c;
+    bw.appendChild(br);
+    var cm = document.createElement("div"); cm.className = "skcmt"; cm.textContent = s.comment || "";
+    card.appendChild(nm); card.appendChild(vl); card.appendChild(bw); card.appendChild(cm);
+    skgrid.appendChild(card);
+  }
+
+  var blocs = document.getElementById("fbblocs");
+  blocs.innerHTML = "";
+
+  function makeBloc(title, items, icon) {
+    if (!items || !items.length) return;
+    var bl = document.createElement("div"); bl.className = "fbloc";
+    var bt = document.createElement("div"); bt.className = "fbloct"; bt.textContent = title;
+    bl.appendChild(bt);
+    var bi = document.createElement("div"); bi.className = "fbitems";
+    for (var i = 0; i < items.length; i++) {
+      var it = document.createElement("div"); it.className = "fbitem";
+      var sp = document.createElement("span"); sp.textContent = icon;
+      var tx = document.createElement("span"); tx.textContent = items[i];
+      it.appendChild(sp); it.appendChild(tx);
+      bi.appendChild(it);
+    }
+    bl.appendChild(bi);
+    blocs.appendChild(bl);
+  }
+
+  makeBloc("POINTS FORTS", fb.points_forts, "✅");
+  makeBloc("AXES D'AMÉLIORATION", fb.axes_amelioration, "⚠️");
+  if (fb.conseil_cle) makeBloc("CONSEIL CLÉ", [fb.conseil_cle], "💡");
+
+  var tr = document.getElementById("transcript");
+  tr.innerHTML = "";
+  var lines = sText.split("\n").filter(Boolean);
+  for (var i = 0; i < lines.length; i++) {
+    var line = lines[i];
+    var idx = line.indexOf(": ");
+    if (idx < 0) continue;
+    var div = document.createElement("div"); div.className = "trline";
+    var bold = document.createElement("b"); bold.textContent = line.slice(0, idx);
+    var rest = document.createTextNode(": " + line.slice(idx + 2));
+    div.appendChild(bold); div.appendChild(rest);
+    tr.appendChild(div);
+  }
+}
+
+
+function showScreen(id) {
+  var screens = document.querySelectorAll(".screen");
+  for (var i = 0; i < screens.length; i++) screens[i].classList.remove("active");
+  document.getElementById(id).classList.add("active");
+  window.scrollTo(0, 0);
+}
+
+function retry() {
+  hist = []; sText = ""; exch = 0; tLeft = 300; ended = false; loading = false;
+  startSim();
+}
+
+function goLobby() {
+  cur = null; hist = []; sText = ""; exch = 0;
+  clearInterval(tInt);
+  var cards = document.querySelectorAll(".scard");
+  for (var i = 0; i < cards.length; i++) cards[i].classList.remove("sel");
+  document.getElementById("preview").classList.remove("vis");
+  document.getElementById("startbtn").disabled = true;
+  showScreen("lobby");
+}
+
+function handleKey(e) {
+  if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMsg(); }
+}
+
+function autoResize(el) {
+  el.style.height = "auto";
+  el.style.height = Math.min(el.scrollHeight, 100) + "px";
+}
+
+initLobby();
+</script>
+</body>
+</html>
