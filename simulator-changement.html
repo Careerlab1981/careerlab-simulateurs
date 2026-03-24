@@ -563,7 +563,7 @@ function sendMsg() {
   setStat(cur.persona + " réfléchit...");
   var msgs = buildMessages(text);
   var body = JSON.stringify({
-    model: "claude-3-5-haiku-20241022",
+    model: "gpt-4o-mini",
     max_tokens: 280,
     system: cur.sys,
     messages: msgs
@@ -575,10 +575,10 @@ function sendMsg() {
     fetch("https://plain-unit-3a63.samir-zabi.workers.dev", {
       method: "POST",
       headers: {"Content-Type": "application/json"},
-      body: JSON.stringify({model: "claude-3-5-haiku-20241022", max_tokens: 1200, messages: [{role: "user", content: prompt}]})
+      body: JSON.stringify({model: "gpt-4o-mini", max_tokens: 1200, messages: [{role: "system", content: "Tu es expert en formation. Réponds uniquement en JSON valide."}, {role: "user", content: prompt}]})
     }).then(function(res) { return res.json(); }).then(function(data) {
-      if (!data || !data.content || !data.content[0]) { throw new Error("No response from API"); }
-      var txt = data.content[0].text.replace(/```json|```/g, "").trim();
+      if (!data || !data.choices || !data.choices[0]) { throw new Error("No response from API"); }
+      var txt = data.choices[0].message.content.replace(/```json|```/g, "").trim();
       return JSON.parse(txt);
     }),
     new Promise(function(_, r) { setTimeout(function() { r(new Error("timeout")); }, 45000); })
