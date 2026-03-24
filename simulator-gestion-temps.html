@@ -572,13 +572,9 @@ function sendMsg() {
     setTimeout(function() { rej(new Error("timeout")); }, 30000);
   });
   Promise.race([
-    fetch("https://api.anthropic.com/v1/messages", {
+    fetch("https://plain-unit-3a63.samir-zabi.workers.dev", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-api-key": "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",
-        "anthropic-version": "2023-06-01",
-        "anthropic-dangerous-direct-browser-access": "true"},
+      headers: {"Content-Type": "application/json"},
       body: body
     }),
     timeout
@@ -668,13 +664,9 @@ function endSim() {
 function getFeedback() {
   var prompt = "Tu es expert en formation managériale. Analyse cet entretien de simulation.\nDÉFI: " + cur.title + "\nCONTEXTE: " + cur.context + "\nCOMPÉTENCES: " + cur.skills.join(", ") + "\nTRANSCRIPTION:\n" + sText + "\nRéponds UNIQUEMENT en JSON valide sans markdown:\n{\"global\":72,\"phrase_bilan\":\"phrase précise\",\"skills\":[{\"name\":\"Compétence\",\"score\":75,\"comment\":\"observation\"}],\"points_forts\":[\"point fort concret\"],\"axes_amelioration\":[\"axe actionnable\"],\"conseil_cle\":\"conseil unique\"}\nÉvalue uniquement: " + cur.skills.join(", ");
   return Promise.race([
-    fetch("https://api.anthropic.com/v1/messages", {
+    fetch("https://plain-unit-3a63.samir-zabi.workers.dev", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-api-key": "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",
-        "anthropic-version": "2023-06-01",
-        "anthropic-dangerous-direct-browser-access": "true"},
+      headers: {"Content-Type": "application/json"},
       body: JSON.stringify({model: "claude-haiku-4-5-20251001", max_tokens: 1200, messages: [{role: "user", content: prompt}]})
     }).then(function(res) { return res.json(); }).then(function(data) {
       var txt = data.content[0].text.replace(/```json|```/g, "").trim();
