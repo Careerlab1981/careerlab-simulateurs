@@ -577,6 +577,7 @@ function sendMsg() {
       headers: {"Content-Type": "application/json"},
       body: JSON.stringify({model: "claude-3-5-haiku-20241022", max_tokens: 1200, messages: [{role: "user", content: prompt}]})
     }).then(function(res) { return res.json(); }).then(function(data) {
+      if (!data || !data.content || !data.content[0]) { throw new Error("No response from API"); }
       var txt = data.content[0].text.replace(/```json|```/g, "").trim();
       return JSON.parse(txt);
     }),
