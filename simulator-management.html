@@ -563,7 +563,7 @@ function sendMsg() {
   setStat(cur.persona + " réfléchit...");
   var msgs = buildMessages(text);
   var body = JSON.stringify({
-    model: "claude-haiku-4-5-20251001",
+    model: "claude-3-haiku-20240307",
     max_tokens: 300,
     system: cur.sys,
     messages: msgs
@@ -667,7 +667,7 @@ function getFeedback() {
     fetch("https://plain-unit-3a63.samir-zabi.workers.dev", {
       method: "POST",
       headers: {"Content-Type": "application/json"},
-      body: JSON.stringify({model: "claude-haiku-4-5-20251001", max_tokens: 1200, messages: [{role: "user", content: prompt}]})
+      body: JSON.stringify({model: "claude-3-haiku-20240307", max_tokens: 1200, messages: [{role: "user", content: prompt}]})
     }).then(function(res) { return res.json(); }).then(function(data) {
       var txt = data.content[0].text.replace(/```json|```/g, "").trim();
       return JSON.parse(txt);
